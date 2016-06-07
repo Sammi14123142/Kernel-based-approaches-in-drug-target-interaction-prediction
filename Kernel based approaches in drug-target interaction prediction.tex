@@ -1,0 +1,466 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage{gensymb}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{multirow}
+\usepackage[version=3]{mhchem}
+\usepackage{csquotes}
+\usepackage{tabularx}
+\parskip=0.1in
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LINE SPACING
+\newcommand{\linespacing}{1.5}
+\renewcommand{\baselinestretch}{\linespacing}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BIBLIOGRAPHY STYLE
+\usepackage[square, number]{natbib}
+%\bibliographystyle{plain}
+\bibliographystyle{apalike}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OTHER FORMATTING/LAYOUT DECLARATIONS
+% Graphics
+\usepackage{graphicx,color}
+\usepackage{epstopdf}
+\usepackage[british]{babel}
+% The left-hand-side should be 40mm.  The top and bottom margins should be
+% 25mm deep.  The right hand margin should be 20mm.
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=4cm,right=2cm,headsep=10pt]{geometry}
+\flushbottom
+% Pages should be numbered consecutively thorugh the main text.  Page numbers
+% should be located centrally at the top of the page.
+\usepackage{fancyhdr}
+\fancypagestyle{plain}{
+	\fancyhf{}
+	% Add "DRAFT: <today's date>" to header (comment out the following to remove)
+	\lhead{\textit{Draft: \today}}
+	%
+	\chead{\thepage}
+	\renewcommand{\headrulewidth}{0pt}
+}
+\pagestyle{plain}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HYPERREF
+\usepackage[colorlinks,pagebackref,pdfusetitle,urlcolor=blue,citecolor=blue,linkcolor=blue,bookmarksnumbered,plainpages=false]{hyperref}
+% For print version, use this instead:
+%\usepackage[pdfusetitle,bookmarksnumbered,plainpages=false]{hyperref}
+%\usepackage{backref}
+%\renewcommand{\backrefpagesname}{Cited on}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN DOCUMENT
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PREAMBLE: roman page numbering i, ii, iii, ...
+\pagenumbering{roman}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TITLE PAGE: The title page should give the following information:
+%%	(i) the full title of the thesis and the sub-title if any;
+%%	(ii) the full name of the author;
+%%	(iii) the qualification aimed for;
+%%	(iv) the name of the University of Sussex;
+%%	(v) the month and year of submission.
+\thispagestyle{empty}
+\begin{flushright}
+\includegraphics[width=18cm]{abct}
+\end{flushright}	
+\vskip40mm
+\begin{center}
+% TITLE
+\huge\textbf{Kernel Based Approaches in Drug-Target Interaction Prediction}
+\vskip2mm
+% SUBTITLE (optional)
+\LARGE\textit{ }
+\vskip5mm
+% AUTHOR
+\Large\textbf{Xinyi ZENG}
+\normalsize
+\end{center}
+\vfill
+\begin{flushleft}
+\large
+% QUALIFICATION
+Submitted for the degree of Bachelor of Science \\
+The Hong Kong Polytechnic University	\\
+% DATE OF SUBMISSION
+April 2016
+\end{flushleft}		
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TABLE OF CONTENTS, LISTS OF TABLES & FIGURES
+\newpage
+\pdfbookmark[0]{Contents}{contents_bookmark}
+\tableofcontents
+\listoftables
+\phantomsection
+\addcontentsline{toc}{chapter}{List of Tables}
+%\listoffigures
+%\phantomsection
+%\addcontentsline{toc}{chapter}{List of Figures}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MAIN THESIS TEXT: arabic page numbering 1, 2, 3, ...
+\newpage
+\pagenumbering{arabic}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{abstract}
+In silico prediction of drug-target interactions effectively facilitate drug candidates selecting process prior to biochemical verification. Machine learning had its heyday in drug discovery around two decades ago. To date, we are witnessing renewed interest in kernel learning, a branch of machine learning that enjoys outstanding performance by integrating chemical and genomic information for prediction. This article provide an overview of kernel based approaches in drug-target interaction prediction, present each of these frameworks with distinctive kernels and subsequently analyse their strengths as well as restrictions.
+\end{abstract}
+\smallskip
+\textbf{Keywords:} drug-target interaction prediction; machine learning; drug discovery; kernel method
+
+
+
+\chapter{Introduction}
+
+The identification of interactions between compounds and therapeutic target proteins typified by enzymes, G-protein-coupled receptors (GPCR), ion channels and nuclear receptors is essential in genomic drug discovery \citep{and02}. Heterogeneous genomic spaces revealed with the completion of human genome sequencing project and numerical biological assays cached in chemical compound databases allowing high-throughput screening bring strong incentive to researches on correlating genomic space to chemical space for lead discovery. 
+
+With various latent interactions still remaining murky, in silico approach is increasingly gaining research attention for its prediction power and auxiliary role in experimental studies by providing optimisation route and supporting evidences. Classical computational methods including text mining and molecular docking fail to concurrently exploit information of chemical space and protein sequence besides their own inevitable restrictions, molecular docking, for example, is highly dependent on 3D structures of proteins. Text mining loses it efficacy on latest discoveries and redundancy of nomenclature \citep{zhu05}.  Kernel learning algorithms are developed progressively for its remarkable performance achieved by taking both aspects into consideration.
+
+A kernel can be considered as a similarity function which outputs the analogy between compounds or proteins. Kernel methods construct a rational framework to integrate data sources in various types which enhances data fusion capability of statistical learning methods in order to model a joint relationship between chemical space, genomic sequence along with drug-target interaction pattern and thus accuracy improves. 
+
+The objective of this literature review is two-fold: 1) to critically summarise the evolution of kernel methods in recent years and therefore 2) to motivate further development of kernel based models.
+
+\chapter{Problem formulation}
+
+For a given set of $N_c$ drug compounds $\mathbf{D} = \{d_1, d_2, \dots, d_{N_c}\}$, another set of $N_t$ target proteins $\mathbf{T} = \{t_1, t_2, \dots, t_{N_t}\}$ and a $N_c \times N_t$ binary matrix \textbf{Y} whose (i,j)-th entry is labelled as +1 if drug $d_i$ targets on protein $t_j$ and labelled as -1/0 otherwise which will be further discussed under specific condition, the prediction of drug-target interaction problem can be categorised into three scenarios: 
+\begin{enumerate}[a.]
+\item to find targeted proteins in \textbf{T} for an out-of-sample drug $d^{'}$, 
+\item to find compounds in \textbf{D} that target a new protein $t^{'}$,
+\item to theorising an unknown interaction of the network between drug $d^{'}$ and target $t^{'}$.
+\end{enumerate}
+
+\section{Support vector machine}
+
+It is intuitively to address the interaction prediction issue using binary classification methods where class +1 refers to interaction and class -1 to non-interaction - nearest neighbour classifiers, decision trees, and support vector machines (SVM), to name a few. SVM is regarded highly among chemoinformatists and bioinformatists for its capability to handle structured data for classification. 
+
+A kernalised SV classifier typically learn a hyperplane by 
+\begin{equation}
+f(x) = \sum^N_{i=1}\alpha_iy_ik(x_i,x) + b
+\end{equation}
+from N pairs $(x_1, y_1), (x_2, y_2), \dots , (x_N, y_N)$ with $y_i \in \{-1, +1\}$, k is a kernel function outputs the similarity between two inputs. For separable data, there exists a hyperplane with a maximal margin $M$ between two classes. Boundaries can be softened by introducing a slack variable b if data is inseparable. The design of kernel functions borrows information from chemical structures of molecules and sequence information of proteins. With the only constraint to be a symmetrically positive definite function, various kernel functions can be employed \citep{kern04}.
+
+\subsubsection{Pairwise kernels}
+
+Vectors representations for drug d $\Phi_{lig}(c) \in \Bbb{R}^{d_c}$, target t $\Phi_{tar}(t) \in \Bbb{R}^{d_t}$ and each pair (t, d) $\Phi(d,t)$ informative enough to capture the physico-chemical and structural properties of molecules and the sequence features of proteins are crucial in order to utilise statistical methods to predict interactions between numerous targets for any given molecule. The vector representation of a drug-target pair $\Phi(d,t)$ can be a direct addition of $\Phi_{lig}(c)$ and $\Phi_{tar}(t)$ \citep{erh06}:
+\begin{equation}
+\Phi(d,t) = (\Phi_{lig}(d)^T, \Phi_{tar}(t)^T)^T
+\end{equation}
+or the tensor product \citep{fau08}:
+\begin{equation}
+\Phi(d,t) = \Phi_{lig}(d) \otimes \Phi_{tar}(t)
+\end{equation}
+where the (i,j)-th element is the product of the i-th element of $\Phi_{lig}(d)$ and the j-th element of $\Phi_{tar}(t)$.
+
+From the perspective of computational burden, \citet{erh06} incorporate feature vectors by simple addition resulting a size of $(d_c + d_t)$ rather than a size of $(d_c \times d_t)$ for tensor product. However, the second approach leads to more flexible combinations of vector representations of small compounds and proteins. It is well worth congratulating that \citet{jac08} significantly reduces the computational complexity by factorising the inner product between two tensor product vectors:
+\begin{equation}
+(\Phi_{lig}(d) \otimes \Phi_{tar}(t))^T(\Phi_{lig}(d^{'}) \otimes \Phi_{tar}(t^{'})) = \Phi_{lig}(d)^T\Phi_{lig}(c^{'})\times\Phi_{tar}(t)^T\Phi_{tar}(t^{'})
+\end{equation}
+so that only the two inner products in dimensions $d_c$ and $d_t$ need computing before taking their product. With two kernels:
+\begin{eqnarray}
+K_{lig}(d, d^{'}) &= \Phi_{lig}(d)^T\Phi_{lig}(d^{'})\\
+K_{tar}(t, t^{'}) &= \Phi_{tar}(t)^T\Phi_{tar}(t^{'})
+\end{eqnarray}
+that map chemical structures and genomic sequences into two Hilbert spaces, the inner product between two tensor products can be derived:
+\begin{equation}
+K((d,t),(d^{'},t^{'})) = K_{lig}(d,d^{'})\times K_{tar}(t,t^{'})
+\end{equation}
+which serves as an input in an SVM. With only one constraint to be a positive semi-definite function for a kernel function, a graph kernel is considered to be a capable candidate for a small molecule that encodes its relevant properties and string kernels for proteins.
+
+\subsubsection{Bipartite local model}
+
+As an extension of local model approaches \citep{ble07, mor08}, two local models are trained to give independent predictions for the same edge whose existence indicates an interaction between a drug node $d_i$ and a target node $t_j$ on a bipartite graph from two subsets with either drug $d_i$ or target $t_j$ excluded from an original dataset\citep{ble09}. In the subset excluding drug $d_i$, +1 is assigned to the drugs targeting $t_j$ or -1 otherwise so that a classifier discriminating two types of drugs predicts the existence of the edge on a scale of -1 to +1. Comparing with another score obtained from the subset without target $t_j$, the higher value is assigned to be the final score to lighten the effect of -1 data due to a major defect in bipartite local model (BLM) since uncertain edges have been assumed non-interaction previously and thus cannot be deduced. SVMs are chosen as local models for the advantage of providing continuous scores and handy kernel tricks.
+
+\section{Regression method}
+
+Predictions of a bipartite graph learning method \citep{yam08} is based on the similarity of features calculated from three inner products: correlations of 1) the new molecule with the target, 2) a studied molecule with the new target and 3) the new molecule with the new target by considering the chemical reaction as a pattern. It consists of three procedures:
+\begin{enumerate}
+\item{Similarity matrix}
+
+A graph-based similarity matrix M = $\bigl(\begin{smallmatrix}
+M_{dd} &M_{dt} \\ M_{dt}^T& M_{tt}
+\end{smallmatrix} \bigr)$, whose entries are calculated using Gaussian functions:
+\begin{eqnarray}
+(M_{dd})_{ij} = exp(\frac{-d^2_{d_id_j}}{h^2}), i, j = 1, \dots, n_d \\
+(M_{dt})_{ij} = exp(\frac{-d^2_{d_it_j}}{h^2}), i = 1, \dots, n_d, j = 1, \dots, n_t \\
+(M_{tt})_{ij} = exp(\frac{-d^2_{t_it_j}}{h^2}), i, j = 1, \dots, n_t 
+\end{eqnarray}
+where:
+\begin{itemize}
+\item[] d: The shortest distance between molecules or proteins on a bipartite graph
+\item[] h: The width parameter
+\end{itemize}
+with an identity matrix $K^T_{dt}$ to guarantee the positive definite property in order to represent the drug-target interaction in an Euclidian Space using feature vectors $\{u_{d_i}\}^{n_d}_{i=1}$ and $\{u_{t_i}\}^{n_t}_{j=1}$. Analogous with the component analysis proposed by \citet{sch98}, eigenvalue decomposition is applied so that all the drugs and targets can be represented by row vectors of matrix U = $(u_{d_1, \dots, u_{d_{n_d}}}, u_{t_1}, \dots, u_{t_{n_t}})^T$
+
+\item{Regression model}
+
+Two kernelised regression models that correlate the chemical spaces of molecules or genomic sequences of targets with the pharmacological feature space to project the coming molecules or targets into the Euclidean space:
+\begin{eqnarray}
+\boldmath{u}_{d^{'}} = f_d(d^{'}, d_i) &= \sum^{n_d}_{i=1}S_d(d^{'}, d_i)w_{d_i}\\
+\boldmath{u}_{t^{'}} = f_t(t^{'}, t_i) &= \sum^{n_t}_{i=1}S_t(t^{'}, t_i)w_{t_i} 
+\end{eqnarray}
+where:
+\begin{itemize}
+\item[] S: the similarity matrix
+\item[] w: a weight vector
+\end{itemize}
+are learned from minimising the loss function:
+\begin{equation}
+L = ||UU^T - SWW^TS^T||^2_F
+\end{equation}
+where:
+\begin{itemize}
+\item[] S: a similarity matrix
+\item[] W = (w$_1$, \dots, w$_n$)$^T$
+\item[] $||\cdot||_F$: Frobenius norm
+\end{itemize}
+
+\item{Prediction}
+
+Drug-target pairs with closeness indicated by the inner product between corresponding molecules and targets in the pharmacological feature space larger than a threshold $\epsilon$ are labelled as non-interaction and vice versa.
+\end{enumerate}
+
+\section{Regularised least square}
+
+\subsubsection{Network-based Laplacian RLS}
+
+To overcome the scarcity of known drug-target interactions in biochemical data, semi-suppervised learning methods (SSL) not only discover knowledge from myriad unlabelled data besides labelled one but also combine interaction patterns with chemical structures and genomic sequence information in order to achieve more accurate predictions. \citet{xia10} implemented this framework using Laplacian regularised least squares (LapRLS), a basic classifier with comparable accuracy with SVM if proper kernels are employed, to train two classifiers for a  drug $d^{'}$ with a target $t_j$ and a target $t^{'}$ with a drug $d_i$ separately
+\begin{eqnarray}
+f(d^{'}, t_j) &= \frac{1}{N_d}\sum^{n_d}_{i=1}s_d(d^{'}, d_i)\mathbf{Y}_{ij}\\
+f(t^{'}, d_i) &= \frac{1}{N_t}\sum^{n_t}_{j=1}s_d(t^{'}, t_j)\mathbf{Y}_{ij}
+\end{eqnarray}
+where: 
+\begin{itemize}
+\item[]  \textbf{Y}: a binary matrix with assured interactions between drug $d_i$ and target $t_j$ labelled as 1 and undiscovered pairs as 0 to be further predicted.
+\item[] s: the similarity score of chemical space for drugs or genomic space for targets
+\item[] $N_d = \sum^{n_d}_{i=1}s_d(d^{'}, d_i)$
+\item[] $N_t = \sum^{n_t}_{j=1}s_t(t^{'}, t_j)$
+\end{itemize}
+and its extension, NetLapRLS, where matrix \textbf{Y} is substituted with a network similarity matrix \textbf{X} whose (i,j)-th entry is the number of drugs interacting with target $t_i$ and $t_j$ or that of targets interacting with drug $d_i$ and $d_j$ to take interaction patterns into consideration so that reaction takes place for a drug-target pair $(d_i, t_j)$ with high scores:
+\begin{equation}
+\bar{f}(d_i, t_j) = \frac{f(d_i, t_j)+f(t_j, d_i)}{2}
+\end{equation}
+
+Comparing with BLM, NetLapRLS discover knowledge from both labelled and unlabelled samples but negative ones.
+
+\subsubsection{RLS-Kron classifier}
+
+Assuming that drugs with similar interaction profiles $y_{d_i}$ on a set of targets tend to behave identically with an outside target, \citet{van11} construct the Gaussian kernel from the $y_{d_i}$ for drugs:
+\begin{equation}
+K_{P, d} = exp(-\gamma_d||y_{d^{'}}-y_{d_i}||^2) 
+\end{equation}
+where the parameter $\gamma_d$ can be determined with cross-validation to control the kernel bandwidth. Analogously for targets:
+\begin{equation}
+K_{P, t} = exp(-\gamma_d||y_{t^{'}}-y_{t_i}||^2) 
+\end{equation}
+Eqn(17, 18) are then combined with kernels representing chemical structure and genomic sequence information $K_{chem, d}, K_{bio,t}$ derived from similarity matrices using weighted average
+\begin{eqnarray}
+K_d &= \beta_dK_{chem, d} + (1 - \beta_d) K_{P, d}\\
+K_t &= \beta_tK_{bio, t} + (1-\beta_t)K_{P,t}
+\end{eqnarray}
+and then integrated into an overall kernel for drug-target pairs using Kronecker product kernel \citep{bas04, ben05, hue10, oya04} which allows predicting drug-target pairs concurrently with a lowered time complexity of $\mathcal{O}(n_d^3 + n_t^3)$. 
+
+However, the primary assumption limits its application on molecules or proteins with unknown interaction profile. 
+
+
+\section{Matrix factorisation}
+
+A pioneering work to obtain a drug-target interaction inference scheme from a fully probabilistic perspective has been proposed by \citet{gon12} using a Bayesian model that frames the interaction prediction problem as a matrix factorisation one. It combines binary classification and dimension reduction approaches by projecting drug molecules and target proteins into a unified low-dimensional subspace using kernels $\mathbf{K}_d, \mathbf{K}_t$ derived from chemical and biological data respectively and thus developing a score matrix for the final prediction matrix \textbf{Y}. The rate-determining step is the calculations of covariance with an overall time complexity of $\mathcal{O}(RN^3_d + RN^3_t + R^3)$ in this variational inference mechanism.
+
+Since Bayesian treatments are computational expensive, \citet{meh14} further extend it utilising a probabilistic formulation to obtain the variational approximation efficiently and integrating multiple side information with different kernels at the mean time so that predictions on outside samples are allowed.
+
+\chapter{Experiment}
+
+The kernel-based methods introduced above frame the prediction of drug-target interactions as three different problems: 
+\begin{enumerate}
+\item{Edge prediction}
+\item{Binary classification}
+\item{Matrix factorisation}
+\end{enumerate}
+
+Three models with distinct characteristics, RLS-Kron classifier\citep{van11}, BLM\citep{ble09}, Bayesian model\citep{gon12}, have been selected to represent the three approaches respectively. In the following experiment, these three models will be implemented on the same dataset offered by \citet{ble09} to better compare performances of kernel based methods.
+
+\section{Data pre-processing}
+
+The datasets used in model evaluation is the Gold standard datasets released as the supplements of ISMB 2008 paper \citep{yam08} whose interaction information covering four major drug-target interaction networks in human, enzymes, GPCRs, ion channels and nuclear receptors, is achieved from KEGG BRITE \citep{kan06}, BRENDA \citep{sch04}, DrugBank \citep{wis08} and SuperTarget \citep{gun08}. The numbers of chemical compounds, target proteins, their ratios as well as the known interactions are summarised below:
+\begin{table}[h]
+\centering
+\begin{tabular}{cccccc}\hline
+Subset & Drug & Target & Drug/Target & Positives & Positive/Negative\\ \hline
+Enzyme & 445 & 664 & 0.67 & 2926 & \\
+GPCRs & 223 & 95 & 2.35 & 635 & \\ 
+Ion channels & 210 & 204 & 1.03 & 1476 & \\
+Nuclear receptors & 54 & 26 & 2.08 & 90 &\\ \hline
+\end{tabular}
+\caption{Summary of ISMB 2008 paper datasets}
+\end{table}
+
+Similarities between each pair of small molecules $d^{'}, d_i$ are formulated as the ratio between the number of nodes which are mutual substructures of both $d^{'}$ and $d_i$ over the total number of nodes which are substructures of at least one of $d^{'}$ and $d_i$, i.e.
+
+\begin{equation}
+s_d(d^{'}, d_i) = \frac{d^{'} \cap d_i}{d^{'} \cup d_i}
+\end{equation}
+
+Such measurement by the ratio of the size of intersection to the union of substructures sets is known as SIMCOMP\citep{hat03}.
+
+In the case of proteins, normalised Smith-Waterman score\citep{sch98} is adopted:
+
+\begin{equation}
+s_t(t^{'}, t_j) = \frac{w(t^{'}, t_j)}{\sqrt{w(t^{'}, t^{'})}\sqrt{w(t_j,t_j)} }
+\end{equation}
+
+As a result, two square matrices indicating similarity scores among drug compounds or target proteins will be the inputs of models.
+\section{Model evaluation}
+
+Parameters for each model are chosen from their original reports as concluded below:
+\begin{table}[h]
+\centering
+\begin{tabular}{cc}\hline
+RLS-Kron classifier & $\tilde{\gamma_d} = \tilde{\gamma_t} = 1, \alpha_d = \alpha_t = 0.5, \sigma = 1$\\
+BLM & c=1\\ 
+Bayesian model & $R= 25, \alpha_{\lambda} = \beta_{\lambda} = 1, \sigma_g = 0.1, \mu = 0$ \\\hline
+\end{tabular}
+\caption{Parameter details}
+\end{table}
+
+Cross validation techniques (CV) are considered to be statistically efficient in evaluating model performances. In K-fold CV, data will be split into k subsets in equal size. Each subset will be used as test data and the remaining data will be used as training data to train a model, that is, k models will be build. In this experiment, 10-fold CV which randomly split data into 10 subsets in equal size is employed in GPCR, ion channel and enzyme datasets while leave-one-out (LOO) CV, where k is always one less than the size of data, for Nuclear receptor dataset due to its small size. It is worth noticing that three models are trained on the same folds of chemical and genomic data as well as interaction information each time. 
+
+To quantify model performances, area under precision-recall curve (AUPR) is utilised rather than the most widely used measurement, area under receiver operating characteristic curve (AUC), on account of the large ratio of negatives to positives for interaction data. Besides each AUPR measure, p-values of paired t-test are marked to indicate how strong is the evidence for the contribution from the model achieving the best performance. 
+
+\section{Results and discussion}
+
+\begin{table}[h]
+\begin{tabular}{ccccc}\hline
+Targets & Dataset & RLS-Kron classifier & BLM & Bayesian model \\ \hline
+\multirow{3}{*}{Enzyme} & drug & 0.368 & 0.092 (1.29 $\times 10^{-26}$) & 0.253 (3.09 $\times 10^{-17}$) \\
+& target & 0.792 & 0.611 (7.92 $\times 10^{-25}$) & 0.607 (4.48 $\times 10^{-28}$) \\
+& interaction & 0.826 (1.81 $\times 10^{-38}$) & 0.496 (2.56 $\times 10^{-53}$) & 0.796 (4.12 $\times 10^{-41}$) \\ \hline
+\multirow{3}{*}{GPCRs} & drug & 0.397 (5.01 $\times 10^{-1}$) & 0.210 (6.50 $\times 10^{-29}$) & 0.357 (5.14 $\times 10^{-6}$) \\
+& target & 0.508 & 0.367 (2.90 $\times 10^{-15}$) & 0.412 (1.01 $\times 10^{-6}$) \\
+& interaction & 0.640 (3.43 $\times 10^{-29}$) & 0.464 (4.03 $\times 10^{-35}$) & 0.686 (1.03 $\times 10^{-15}$) \\ \hline
+\multirow{3}{*}{Ion channel} & drug & 0.366 & 0.167 (1.51 $\times 10^{-20}$) & 0.296 (2.15 $\times 10^{-7}$) \\
+& target & 0.778 & 0.641 (2.26 $\times 10^{-21}$) & 0.725 (6.90 $\times 10^{-8}$) \\
+& interaction & 0.804 (1.08 $\times 10^{-38}$) & 0.592 (1.45 $\times 10^{-39}$) & 0.876 (2.72 $\times 10^{-15}$) \\ \hline
+\multirow{3}{*}{Nuclear receptor} & drug & 0.482 (1.79 $\times 10^{-2}$) & 0.194 (3.49 $\times 10^{-20}$) & 0.450 (3.46 $\times 10^{-4}$) \\
+& target & 0.432 (4.47 $\times 10^{-1}$) & 0.325 (3.10 $\times 10^{-3}$) & 0.404 (2.19 $\times 10^{-1}$) \\
+& interaction & 0.539 (3.29 $\times 10^{-5}$) & 0.204 (2.09 $\times 10^{-24}$) & 0.508 (1.37 $\times 10^{-8}$) \\ \hline
+\end{tabular}
+\caption{AUPR values by 5 trial 10-fold CV with p-values}
+\end{table}
+
+Judged from AUPR values of drug and target prediction, it is easy to tell that LapRLS achieves the best performance, slightly outperforming Bayesian model and considerably for BLM. In terms of pair prediction, LapRLS still performed the best on enzyme and nuclear receptor datasets while it was not the case for GPCRs and ion channel where Bayesian model outperformed the other two.
+In general evaluation, target predictions are more accurate than that on drugs as a result of a more efficient similarity presentation for proteins whereas both of them are more difficult than pair prediction since new drugs or targets with unknown interactions are involved.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}\hline
+Model & Space & \multicolumn{2}{c}{Time} \\
+\cline{3-4} 
+& & Train & Test\\
+RLS-Kron classifier   & $\mathcal{O}(n_dn_t)$ & $\mathcal{O}(n^3_d + n^3_t)$ & $\mathcal{O}(1)$ \\
+BLM & $\mathcal{O}(n_dn_t)$ & $\mathcal{O}(n_dn_t(n^2_dn^2_t))$ &$\mathcal{O}(1)$ \\
+Bayesian model & $\mathcal{O}(n_dn_t)$ & $\mathcal{O}(R(n^3_d + n^3_t)t)$ & $\mathcal{O}(1)$
+
+\end{tabular}
+\caption{Complexities comparison}
+\label{cc}
+\end{table}
+
+Space and time complexities quantify the execution time and memory space required by a program which are essential in efficacy measurement. Time complexity indicates the overall number of steps an algorithm takes to solve a problem whereas space complexity is measured by using polynomial amounts of memory with an infinite amount of time. Table \ref{cc} shows that kernel methods are computational expensive which significantly restricting their utility on large datasets.
+
+\chapter{Improvement}
+
+To circumventing the local minimum issue, the application of kernel methods is generally formulated as a quadratic programming (QP) problem whose time and space complexities of $\mathcal{O}(N^3)$ and $\mathcal{O}(N^2)$ respectively when implemented in a straightforward way are computationally infeasible. Much effort has been devoted to fast learning approaches for large data sets from various perspectives. In this section, two developmental milestones, generalised core vector machine (CVM) and fast kernel density estimate (FastKDE), are reviewed succinctly. 
+
+\section{CVM}
+The CVM algorithm\citep{tsa05} simplifies kernel methods into equivalent minimum enclosing ball (MEB) problems so that not only time complexity is linear in N and the space complexity independent of N but also approximations converge to optimality. A generalised CVM \citep{tsa06} in the form of 
+\begin{equation}
+\begin{aligned}
+&\text{maximise}
+&& \pmb{\alpha}^T(diag(\pmb{K})+\Delta)-\pmb{\alpha}^T\pmb{K\alpha}\\
+&\text{s.t.}
+&& \pmb{\alpha}^T\pmb{1}=1, \alpha \geq 0
+\end{aligned}
+\end{equation}
+
+extends the applicability for a larger range of kernel methods.
+
+ 
+
+\section{FastKDE}
+
+Unlike CVM, FastKDE innovatively scales up kernel methods in a perspective of kernel density estimation (KDE) bridged by an entropy-based integrated squared error {ISE} criterion which expresses the problem as finding a set of variable weights $\pmb{\alpha} = \{\alpha_1, \dots, \alpha_N\}$, the minimiser of a weighted-sum objective:
+\begin{equation}
+\begin{aligned}
+&\text{minimise}
+&&J_1 + \lambda J_2 = ISE(\alpha) + \lambda \hat{V}(\pmb{S;\alpha}) \\
+&\text{s.t.}
+&&\pmb{\alpha^{'}1} = 1, \pmb{\alpha} \geq 0
+\end{aligned}
+\end{equation}
+where:
+\begin{itemize}
+\item[] $\hat{V}(\pmb{S;\alpha})$: a quadratic entropy estimator of the probability density function
+\item[] $\lambda$: a parameter gives relative weight between $J_1$ and $J_2$
+\end{itemize}
+As proved by \citet{shi14}, KDE with any kernel variants can be derived such that the optimisation problem can be further formulated as
+\begin{equation}
+\pmb{\alpha}  = \text{arg min}\pmb{\alpha^{'}K\alpha}-\alpha^{'}\text{diag}(\pmb{K}+\Delta)
+\end{equation}
+where:
+\begin{itemize}
+\item[] $\Delta = \frac{(1+\lambda)\text{diag(\pmb{K})}}{1-\lambda}$
+\end{itemize}
+A sampling strategy is then adopted to find a new KDE on a reduced data set with the estimation accuracy suffering little:
+\begin{equation}
+\begin{aligned}
+&\text{minimise} &&D(\hat{p}(x), \tilde{p}(x))\\
+&\text{s.t.} &&\tilde{p}(x) = \frac{1}{m}\sum^m_{i=1}k(x, x_i)
+\end{aligned}
+\end{equation}
+
+\chapter{Conclusion}
+This article reviews state-of-art kernel based methods for predicting drug-target interaction. Three typical methods framing the prediction task into different problems have been implemented on the same gold standard dataset, the experimental results of which shows an overall outperforming of LapRLS, followed by Bayesian model and further by BLM. The unknown interactions of new compounds or proteins complicate predictions on drug or target data so that AUPR values for pair predictions always achieves the highest. The universal lower AUPR values on drug predictions than that of targets might be a result of a more efficient similarity presentation of proteins. More efforts will be devoted from three perspective:
+
+
+\newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BIBLIOGRAPHY
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliography{kerbib}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% END DOCUMENT
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
